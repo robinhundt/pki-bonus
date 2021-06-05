@@ -1,9 +1,10 @@
-use anyhow::{Result, Context};
+use anyhow::{Context, Result};
 use std::fs::File;
 use std::io::Write;
 
 mod task1;
 mod task2;
+mod task3;
 
 use clap::{AppSettings, Clap};
 use std::path::PathBuf;
@@ -20,7 +21,8 @@ struct Opts {
 enum SubCommand {
     /// sub command to solve task one, hash will be printed to stdout
     Task1(Task1),
-    Task2(Task2)
+    Task2(Task2),
+    Task3(Task3),
 }
 
 #[derive(Clap)]
@@ -36,22 +38,47 @@ struct Task1 {
 struct Task2 {
     task_1_cipher: PathBuf,
     /// Where to store the resulting signature and key files
-    out_folder: PathBuf
+    out_folder: PathBuf,
 }
 
+#[derive(Clap)]
+struct Task3 {
+    public_key: PathBuf,
+    private_key: PathBuf,
+    hash: String,
+    /// Where to store the resulting signature and key files
+    out_folder: PathBuf,
+}
 
-fn main() -> Result<()>{
+fn main() -> Result<()> {
     let opts: Opts = Opts::parse();
 
     match opts.subcmd {
-        SubCommand::Task1(Task1 { name, email, matrikel_no, file_name }) => {
+        SubCommand::Task1(Task1 {
+            name,
+            email,
+            matrikel_no,
+            file_name,
+        }) => {
             let res = task1::solve(&name, &email, &matrikel_no)?;
             let mut f = File::create(file_name)?;
             f.write_all(res.encoded_enc.as_bytes())?;
             println!("Hash: {}", res.encoded_hash);
         }
-        SubCommand::Task2(Task2 {out_folder, task_1_cipher}) => {
+        SubCommand::Task2(Task2 {
+            out_folder,
+            task_1_cipher,
+        }) => {
             task2::solve(&task_1_cipher, &out_folder).context("Failed solving task 2")?;
+        }
+        SubCommand::Task3(Task3 {
+            public_key,
+            private_key,
+            hash,
+            out_folder,
+        }) => {
+            task3::solve(&hash, &public_key, &private_key, &out_folder)
+                .context("Failed solving task 3")?;
         }
     }
     Ok(())
